@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hms-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hms-backend
+  template:
+    metadata:
+      labels:
+        app: hms-backend
+    spec:
+      containers:
+      - name: backend
+        # 👇 REPLACE WITH YOUR DOCKER HUB USERNAME
+        image: macharlasainadh/hms-backend:latest 
+        ports:
+        - containerPort: 9090
+        env:
+        # Connect to the K8s database 'db'
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://db:3306/hms_db"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "root"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "root"
+        # Ensure Hibernate updates the DB schema
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hms-backend-service
+spec:
+  type: NodePort
+  selector:
+    app: hms-backend
+  ports:
+    - protocol: TCP
+      port: 5101       # Internal cluster port
+      targetPort: 9090 # Container port
+      nodePort: 30001  # 🟢 External Access Port (Safe)
